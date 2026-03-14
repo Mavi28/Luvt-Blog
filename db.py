@@ -117,3 +117,28 @@ def fmt_date(ts: str) -> str:
         return dt.strftime("%-d %B %Y")
     except Exception:
         return ts[:10]
+
+
+def upload_cover_image(file_bytes: bytes, filename: str, mime_type: str) -> str:
+    """Upload image to Supabase Storage bucket 'post-images', return public URL."""
+    import uuid, os
+    client = get_admin_client()
+    ext = os.path.splitext(filename)[-1].lower() or ".jpg"
+    path = f"covers/{uuid.uuid4()}{ext}"
+    client.storage.from_("post-images").upload(
+        path,
+        file_bytes,
+        {"content-type": mime_type, "upsert": "true"},
+    )
+    url = client.storage.from_("post-images").get_public_url(path)
+    return url
+
+
+def delete_cover_image(image_url: str) -> None:
+    """Delete image from Supabase Storage by its public URL. Non-critical."""
+    try:
+        client = get_admin_client()
+        path = image_url.split("/post-images/")[-1]
+        client.storage.from_("post-images").remove([path])
+    except Exception:
+        pass
