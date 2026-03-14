@@ -18,6 +18,27 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap');
 
+/* ── GLOBAL SCALE RESET — fixes Streamlit's oversized defaults ── */
+html { font-size: 14px !important; }
+
+/* kill all of Streamlit's own text scaling */
+[data-testid="stAppViewContainer"],
+[data-testid="stAppViewContainer"] * {
+    font-size: inherit;
+}
+
+/* Streamlit renders markdown in these — force small */
+.stMarkdown p, .stMarkdown li, .stMarkdown span {
+    font-size: 13px !important;
+    line-height: 1.7 !important;
+}
+
+/* Streamlit button default is huge */
+.stButton > button {
+    font-size: 10px !important;
+    padding: 6px 14px !important;
+}
+
 /* reset & base */
 html, body, [data-testid="stAppViewContainer"] {
     background: #f8f6f1 !important;
@@ -463,11 +484,16 @@ if st.session_state.view == "home":
     if hero:
         col_img, col_text = st.columns(2)
         with col_img:
-            st.markdown(f"""
-            <div style="background:#f0ede5;min-height:480px;border-right:1px solid #e8e3d8;
-                        display:flex;align-items:center;justify-content:center">
-              {SVG_DECO[0]}
-            </div>""", unsafe_allow_html=True)
+            if hero.get("cover_image_url"):
+                st.markdown('<div style="border-right:1px solid #e8e3d8;overflow:hidden;min-height:480px">', unsafe_allow_html=True)
+                st.image(hero["cover_image_url"], use_container_width=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style="background:#f0ede5;min-height:480px;border-right:1px solid #e8e3d8;
+                            display:flex;align-items:center;justify-content:center">
+                  {SVG_DECO[0]}
+                </div>""", unsafe_allow_html=True)
         with col_text:
             st.markdown(f"""
             <div style="padding:60px 52px">
@@ -511,9 +537,10 @@ if st.session_state.view == "home":
             cols = st.columns(3)
             for i, post in enumerate(row):
                 with cols[i]:
+                    thumb = f'<img src="{post["cover_image_url"]}" style="width:100%;height:160px;object-fit:cover"/>' if post.get("cover_image_url") else SVG_DECO[i % 4]
                     st.markdown(f"""
                     <div class="post-card">
-                      <div class="card-thumb">{SVG_DECO[i % 4]}</div>
+                      <div class="card-thumb" style="padding:0;overflow:hidden">{thumb}</div>
                       <div class="card-cat">{post['category']}</div>
                       <div class="card-title">{post['title']}</div>
                       <div class="card-excerpt">{post.get('deck','')}</div>
@@ -573,12 +600,16 @@ elif st.session_state.view == "post":
           </div>
         </div>""", unsafe_allow_html=True)
 
-        # Hero image placeholder
-        st.markdown(f"""
-        <div style="height:400px;background:#f0ede5;border-bottom:1px solid #e8e3d8;
-                    display:flex;align-items:center;justify-content:center">
-          {SVG_DECO[0]}
-        </div>""", unsafe_allow_html=True)
+        # Hero image
+        if post.get("cover_image_url"):
+            st.image(post["cover_image_url"], use_container_width=True)
+            st.markdown('<div style="border-bottom:1px solid #e8e3d8;height:1px;margin-bottom:0"></div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div style="height:400px;background:#f0ede5;border-bottom:1px solid #e8e3d8;
+                        display:flex;align-items:center;justify-content:center">
+              {SVG_DECO[0]}
+            </div>""", unsafe_allow_html=True)
 
         # Body + sidebar
         body_col, side_col = st.columns([3, 1])
